@@ -6,13 +6,47 @@
   --font-mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
 }
 
-html {
-  background: #FAFAFA;
-  color-scheme: light;
+/* ===== Theme CSS Variables ===== */
+:root {
+  --t-bg: #FAFAFA;
+  --t-fg: #0A0A0A;
+  --t-fg-secondary: rgba(10,10,10,0.45);
+  --t-fg-muted: rgba(10,10,10,0.25);
+  --t-divider: rgba(10,10,10,0.08);
+  --t-hover: rgba(10,10,10,0.04);
+  --t-banner-bg: rgba(10,10,10,0.035);
+  --t-shimmer: rgba(0,0,0,0.06);
 }
 html[data-theme="dark"] {
-  background: #0A0E14;
+  --t-bg: #0A0E14;
+  --t-fg: #FAFAFA;
+  --t-fg-secondary: rgba(250,250,250,0.45);
+  --t-fg-muted: rgba(250,250,250,0.25);
+  --t-divider: rgba(250,250,250,0.08);
+  --t-hover: rgba(250,250,250,0.05);
+  --t-banner-bg: rgba(250,250,250,0.05);
+  --t-shimmer: rgba(255,255,255,0.08);
+}
+
+html {
+  background: var(--t-bg);
+  color-scheme: light;
+  transition: background-color 0.5s ease;
+}
+html[data-theme="dark"] {
   color-scheme: dark;
+}
+
+/* ===== Transition Classes ===== */
+.themed {
+  transition: color 0.5s ease, background-color 0.5s ease, border-color 0.5s ease, fill 0.5s ease, stroke 0.5s ease;
+}
+.themed-interactive {
+  transition: color 0.5s ease, background-color 0.5s ease, border-color 0.5s ease, fill 0.5s ease, stroke 0.5s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+/* SVG icons need own transition — transition is NOT inherited from parent */
+.themed svg, .themed-interactive svg {
+  transition: fill 0.5s ease, stroke 0.5s ease, color 0.5s ease;
 }
 
 body {
@@ -20,7 +54,7 @@ body {
   padding: 0;
   overflow-x: hidden;
   font-family: var(--font-sans);
-  transition: background-color 0.8s ease, color 0.8s ease;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 /* ===== Editorial Animated Underline ===== */
@@ -54,7 +88,7 @@ button:focus-visible {
 
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
-  body {
+  html, body, .themed, .themed-interactive {
     transition: none !important;
   }
   .editorial-link::after {

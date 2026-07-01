@@ -4,7 +4,7 @@
  * Pure CSS + Motion.
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
   Home, BookOpen, Github, Mail, Check, Wind, Sun, Moon,
@@ -460,13 +460,13 @@ export default function App() {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState("/avatar.png");
   const [showInitials, setShowInitials] = useState(false);
+  const [themeToggling, setThemeToggling] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const email = "cotovo@qq.com";
-  const t = THEMES[theme];
   const ToggleIcon = theme === "light" ? Moon : Sun;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", THEMES[theme].bg);
@@ -477,14 +477,20 @@ export default function App() {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = (e: MediaQueryListEvent) => {
       if (!localStorage.getItem("theme")) {
-        setTheme(e.matches ? "dark" : "light");
+        const next = e.matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", THEMES[next].bg);
+        setTheme(next);
       }
     };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+  useEffect(() => () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+  }, []);
 
   useEffect(() => {
     if (!showBanner) return;
@@ -519,19 +525,23 @@ export default function App() {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(prev => {
-      const next = prev === "light" ? "dark" : "light";
-      localStorage.setItem("theme", next);
-      return next;
-    });
-  }, []);
+    const next = theme === "light" ? "dark" : "light";
+    // Set data-theme synchronously so CSS variables change immediately
+    document.documentElement.setAttribute("data-theme", next);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", THEMES[next].bg);
+    setThemeToggling(true);
+    setTimeout(() => setThemeToggling(false), 700);
+    localStorage.setItem("theme", next);
+    setTheme(next);
+  }, [theme]);
 
   return (
     <MotionConfig reducedMotion="user">
       <main
         aria-label="kerntau 个人主页"
-        className="relative min-h-screen w-full overflow-x-hidden font-sans flex items-center justify-center"
-        style={{ background: t.bg, color: t.fg }}
+        className="themed relative min-h-screen w-full overflow-x-hidden font-sans flex items-center justify-center"
+        style={{ background: 'var(--t-bg)', color: 'var(--t-fg)' }}
       >
         {/* Rain Backdrop */}
         <RainBackdrop theme={theme} />
@@ -544,16 +554,16 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
               transition={{ duration: 0.45, ease: EASE }}
-              className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center"
+              className="themed fixed top-0 left-0 right-0 z-40 flex items-center justify-center"
               style={{
-                backgroundColor: theme === "dark" ? "rgba(250,250,250,0.05)" : "rgba(10,10,10,0.035)",
+                backgroundColor: 'var(--t-banner-bg)',
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
-                borderBottom: `1px solid ${t.divider}`,
+                borderBottom: '1px solid var(--t-divider)',
               }}
             >
               <div className="relative flex items-center justify-center py-2 px-4 sm:px-6 w-full max-w-2xl">
-                <div className="flex-1 text-center text-[11px] tracking-wide overflow-hidden" style={{ color: t.fgSecondary }}>
+                <div className="themed flex-1 text-center text-[11px] tracking-wide overflow-hidden" style={{ color: 'var(--t-fg-secondary)' }}>
                   <AnimatePresence mode="wait">
                     <motion.p
                       key={bannerIndex}
@@ -567,8 +577,8 @@ export default function App() {
                         href={BANNERS[bannerIndex].link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="editorial-link font-medium"
-                        style={{ color: t.fg }}
+                        className="themed editorial-link font-medium"
+                        style={{ color: 'var(--t-fg)' }}
                       >
                         {BANNERS[bannerIndex].link.label}
                       </a>
@@ -578,8 +588,8 @@ export default function App() {
                 </div>
                 <button
                   onClick={dismissBanner}
-                  className="absolute right-4 sm:right-6 flex-shrink-0 transition-opacity duration-200 hover:opacity-50 cursor-pointer"
-                  style={{ color: t.fgMuted }}
+                  className="themed-interactive absolute right-4 sm:right-6 flex-shrink-0 hover:opacity-50 cursor-pointer"
+                  style={{ color: 'var(--t-fg-muted)' }}
                   aria-label="关闭横幅"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -597,8 +607,8 @@ export default function App() {
               animate={{ opacity: 1, x: "-50%", y: 0, scale: 1 }}
               exit={{ opacity: 0, x: "-50%", y: -10, scale: 0.95 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="fixed left-1/2 z-50 text-xs font-medium px-4 py-2 rounded-full whitespace-nowrap"
-              style={{ backgroundColor: t.fg, color: t.bg, top: showBanner ? "3.5rem" : "1.5rem" }}
+              className="themed fixed left-1/2 z-50 text-xs font-medium px-4 py-2 rounded-full whitespace-nowrap"
+              style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)', top: showBanner ? "3.5rem" : "1.5rem" }}
               role="status"
             >
               邮箱已复制
@@ -616,19 +626,19 @@ export default function App() {
           {/* Avatar */}
           <motion.div variants={scaleIn} className="relative mb-6 sm:mb-8">
             <div
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden relative transition-transform duration-500 hover:scale-105"
-              style={{ border: `1px solid ${t.divider}` }}
+              className="themed-interactive w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden relative hover:scale-105"
+              style={{ border: '1px solid var(--t-divider)' }}
             >
               {!imgLoaded && (
                 <div
-                  className="absolute inset-0 animate-pulse"
-                  style={{ background: theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}
+                  className="themed absolute inset-0 animate-pulse"
+                  style={{ background: 'var(--t-shimmer)' }}
                 />
               )}
               {showInitials ? (
                 <div
-                  className="w-full h-full flex items-center justify-center font-serif text-2xl"
-                  style={{ color: t.fgSecondary, background: t.hover }}
+                  className="themed w-full h-full flex items-center justify-center font-serif text-2xl"
+                  style={{ color: 'var(--t-fg-secondary)', background: 'var(--t-hover)' }}
                 >
                   P
                 </div>
@@ -655,8 +665,8 @@ export default function App() {
             <motion.span
               animate={{ opacity: [0.35, 1, 0.35] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute bottom-1 right-1 w-2 h-2 rounded-full border-2 z-10"
-              style={{ backgroundColor: t.fg, borderColor: t.bg }}
+              className="themed absolute bottom-1 right-1 w-2 h-2 rounded-full border-2 z-10"
+              style={{ backgroundColor: 'var(--t-fg)', borderColor: 'var(--t-bg)' }}
             />
           </motion.div>
 
@@ -672,7 +682,7 @@ export default function App() {
           <motion.p
             variants={fadeUp}
             className="text-xs tracking-[0.25em] uppercase font-medium mb-4"
-            style={{ color: t.fgSecondary }}
+            style={{ color: 'var(--t-fg-secondary)' }}
           >
             Frontend Crafter
           </motion.p>
@@ -681,11 +691,11 @@ export default function App() {
           <motion.div
             variants={fadeUp}
             className="flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 gap-y-1.5 text-[11px] mb-8 sm:mb-10"
-            style={{ color: t.fgMuted }}
+            style={{ color: 'var(--t-fg-muted)' }}
           >
             {ABOUT.map(({ icon: Icon, value }, i) => (
               <span key={value} className="flex items-center gap-1.5">
-                {i > 0 && <span className="w-1 h-1 rounded-full" style={{ backgroundColor: t.fgMuted }} />}
+                {i > 0 && <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--t-fg-muted)' }} />}
                 <Icon className="w-3 h-3" />
                 {value}
               </span>
@@ -696,7 +706,7 @@ export default function App() {
           <motion.div
             variants={dividerIn}
             className="h-px w-10 sm:w-12 mb-6 sm:mb-8"
-            style={{ backgroundColor: t.divider, transformOrigin: "center" }}
+            style={{ backgroundColor: 'var(--t-divider)', transformOrigin: "center" }}
           />
 
           {/* Navigate */}
@@ -707,10 +717,10 @@ export default function App() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-sm font-medium transition-all duration-200 hover:scale-105"
-                style={{ color: t.fg }}
+                className="group flex items-center gap-2 text-sm font-medium themed-interactive hover:scale-105"
+                style={{ color: 'var(--t-fg)' }}
               >
-                <Icon className="w-3.5 h-3.5 transition-colors duration-200 group-hover:text-current" style={{ color: t.fgMuted }} />
+                <Icon className="w-3.5 h-3.5 group-hover:text-current" style={{ color: 'var(--t-fg-muted)', transition: 'color 0.2s ease' }} />
                 <span className="editorial-link">{label}</span>
               </a>
             ))}
@@ -724,14 +734,14 @@ export default function App() {
                 <button
                   key={s.label}
                   onClick={handleCopy}
-                  className="group relative p-2 -m-2 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer"
-                  style={{ color: copied ? t.fg : t.fgSecondary }}
+                  className="group relative p-2 -m-2 rounded-full themed-interactive hover:scale-110 cursor-pointer"
+                  style={{ color: copied ? 'var(--t-fg)' : 'var(--t-fg-secondary)' }}
                   aria-label={s.label}
                 >
                   {copied ? <Check className="w-[18px] h-[18px]" /> : <Icon className="w-[18px] h-[18px]" />}
                   <span
-                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 whitespace-nowrap pointer-events-none"
-                    style={{ backgroundColor: t.fg, color: t.bg }}
+                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                    style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
                   >
                     {s.label}
                   </span>
@@ -742,14 +752,14 @@ export default function App() {
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative p-2 -m-2 rounded-full transition-all duration-200 hover:scale-110"
-                  style={{ color: t.fgSecondary }}
+                  className="group relative p-2 -m-2 rounded-full themed-interactive hover:scale-110"
+                  style={{ color: 'var(--t-fg-secondary)' }}
                   aria-label={s.label}
                 >
                   <Icon className="w-[18px] h-[18px]" />
                   <span
-                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 whitespace-nowrap pointer-events-none"
-                    style={{ backgroundColor: t.fg, color: t.bg }}
+                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                    style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
                   >
                     {s.label}
                   </span>
@@ -762,33 +772,33 @@ export default function App() {
           <motion.div
             variants={dividerIn}
             className="h-px w-10 sm:w-12 mb-6 sm:mb-8"
-            style={{ backgroundColor: t.divider, transformOrigin: "center" }}
+            style={{ backgroundColor: 'var(--t-divider)', transformOrigin: "center" }}
           />
 
           {/* Quote */}
           <motion.p
             variants={fadeUp}
             className="font-serif text-base italic text-center leading-relaxed mb-6 sm:mb-8 relative"
-            style={{ color: t.fgSecondary }}
+            style={{ color: 'var(--t-fg-secondary)' }}
           >
-            <span className="font-serif text-2xl mr-0.5" style={{ color: t.fgMuted }}>"</span>
+            <span className="font-serif text-2xl mr-0.5" style={{ color: 'var(--t-fg-muted)' }}>"</span>
             起风了，唯有努力生存。
-            <span className="font-serif text-2xl ml-0.5" style={{ color: t.fgMuted }}>"</span>
+            <span className="font-serif text-2xl ml-0.5" style={{ color: 'var(--t-fg-muted)' }}>"</span>
           </motion.p>
 
           {/* Controls */}
           <motion.div variants={fadeUp} className="flex items-center gap-3 sm:gap-4 mb-5">
             <button
               onClick={handleChime}
-              className="group relative p-2.5 rounded-full transition-colors duration-200 cursor-pointer"
-              style={{ backgroundColor: t.hover }}
+              className="group relative p-2.5 rounded-full themed-interactive cursor-pointer"
+              style={{ backgroundColor: 'var(--t-hover)' }}
               aria-label="播放风铃音效"
             >
               <motion.div
                 animate={chiming ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
                 transition={{ duration: 0.6 }}
               >
-                <Wind className="w-4 h-4" style={{ color: t.fgSecondary }} />
+                <Wind className="w-4 h-4" style={{ color: 'var(--t-fg-secondary)' }} />
               </motion.div>
               <AnimatePresence>
                 {chiming &&
@@ -800,13 +810,13 @@ export default function App() {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.7, delay: i * 0.12 }}
                       className="absolute inset-0 rounded-full border pointer-events-none"
-                      style={{ borderColor: t.fg }}
+                      style={{ borderColor: 'var(--t-fg)' }}
                     />
                   ))}
               </AnimatePresence>
               <span
-                className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 whitespace-nowrap pointer-events-none"
-                style={{ backgroundColor: t.fg, color: t.bg }}
+                className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
               >
                 轻抚风铃
               </span>
@@ -814,8 +824,8 @@ export default function App() {
 
             <button
               onClick={toggleTheme}
-              className="group relative p-2.5 rounded-full transition-colors duration-200 cursor-pointer"
-              style={{ backgroundColor: t.hover }}
+              className="group relative p-2.5 rounded-full themed-interactive cursor-pointer"
+              style={{ backgroundColor: 'var(--t-hover)' }}
               aria-label="切换明暗主题"
             >
               <motion.div
@@ -824,11 +834,25 @@ export default function App() {
                 animate={{ rotate: 0, opacity: 1 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <ToggleIcon className="w-4 h-4" style={{ color: t.fgSecondary }} />
+                <ToggleIcon className="w-4 h-4" style={{ color: 'var(--t-fg-secondary)' }} />
               </motion.div>
+              <AnimatePresence>
+                {themeToggling &&
+                  [0, 1].map((i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ scale: 1, opacity: 0.35 }}
+                      animate={{ scale: 2.5 + i * 0.5, opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.7, delay: i * 0.12 }}
+                      className="absolute inset-0 rounded-full border pointer-events-none"
+                      style={{ borderColor: 'var(--t-fg)' }}
+                    />
+                  ))}
+              </AnimatePresence>
               <span
-                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 whitespace-nowrap pointer-events-none"
-                style={{ backgroundColor: t.fg, color: t.bg }}
+                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
               >
                 切换主题
               </span>
@@ -837,10 +861,10 @@ export default function App() {
 
           {/* Footer */}
           <motion.div variants={fadeUp} className="flex flex-col items-center gap-2">
-            <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: t.fgMuted }}>
+            <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--t-fg-muted)' }}>
               © {YEAR} kerntau
             </p>
-            <p className="text-[10px] tracking-wide" style={{ color: t.fgMuted }}>
+            <p className="text-[10px] tracking-wide" style={{ color: 'var(--t-fg-muted)' }}>
               本站由 <a href="https://cloudflare.com" target="_blank" rel="noopener noreferrer" className="editorial-link">Cloudflare</a> 强力驱动 · 运行 <Uptime />
             </p>
           </motion.div>
