@@ -7,8 +7,8 @@
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
-  Home, BookOpen, Github, Mail, Check, Wind, Sun, Moon,
-  MapPin, Calendar, GraduationCap, X, type LucideIcon,
+  House, NotebookText, Github, AtSign, Check, Volume2, Sun, Moon,
+  MapPinned, CalendarDays, Braces, X, type LucideIcon,
 } from "lucide-react";
 
 // ======== THEME ========
@@ -53,21 +53,21 @@ interface LinkItem {
 }
 
 const NAV_LINKS: LinkItem[] = [
-  { label: "Home", url: "https://my.coox.one", icon: Home },
-  { label: "Blog", url: "https://blog.coox.one", icon: BookOpen },
+  { label: "Home", url: "https://my.coox.one", icon: House },
+  { label: "Blog", url: "https://blog.coox.one", icon: NotebookText },
 ];
 
 const SOCIALS: LinkItem[] = [
-  { label: "Email", url: "mailto:cotovo@qq.com", icon: Mail, copyable: true },
+  { label: "Email", url: "mailto:cotovo@qq.com", icon: AtSign, copyable: true },
   { label: "GitHub", url: "https://github.com/cotovo", icon: Github },
   { label: "抖音", url: "https://v.douyin.com/HWMgjLaTtFk", icon: DouyinIcon },
   { label: "Bilibili", url: "https://space.bilibili.com/9655855", icon: BilibiliIcon },
 ];
 
 const ABOUT = [
-  { icon: MapPin, value: "湖北 · 十堰" },
-  { icon: Calendar, value: "2006 / 10" },
-  { icon: GraduationCap, value: "计算机科学" },
+  { icon: MapPinned, value: "湖北 · 十堰" },
+  { icon: CalendarDays, value: "2006 / 10" },
+  { icon: Braces, value: "计算机科学" },
 ] as const;
 
 const YEAR = new Date().getFullYear();
@@ -170,6 +170,247 @@ const dividerIn = {
   hidden: { opacity: 0, scaleX: 0 },
   visible: { opacity: 1, scaleX: 1, transition: { duration: 0.6, ease: EASE, delay: 0.2 } },
 };
+
+// ======== CODEX PET ========
+
+const PET_SPRITESHEET = "/pets/yuexinmiao/spritesheet.webp";
+const PET_COLUMNS = 8;
+const PET_ROWS = 9;
+
+type PetAction = "idle" | "running-right" | "running-left" | "waving" | "jumping";
+
+const PET_ACTIONS: Record<PetAction, { row: number; durations: number[]; loop: boolean }> = {
+  idle: { row: 0, durations: [280, 110, 110, 140, 140, 320], loop: true },
+  "running-right": { row: 1, durations: [120, 120, 120, 120, 120, 120, 120, 220], loop: true },
+  "running-left": { row: 2, durations: [120, 120, 120, 120, 120, 120, 120, 220], loop: true },
+  waving: { row: 3, durations: [140, 140, 140, 280], loop: false },
+  jumping: { row: 4, durations: [140, 140, 140, 140, 280], loop: false },
+};
+
+const PET_RESTING_ACTIONS: PetAction[] = ["idle", "waving", "jumping"];
+const PET_WALK_SPEED = 44;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getPetGutter() {
+  if (typeof window === "undefined") return 16;
+  return window.innerWidth < 640 ? 12 : 16;
+}
+
+function getEstimatedPetWidth() {
+  if (typeof window === "undefined") return 96;
+  return clamp(window.innerWidth * 0.1, 72, 96);
+}
+
+function getInitialPetX() {
+  if (typeof window === "undefined") return 16;
+  const gutter = getPetGutter();
+  return Math.max(gutter, window.innerWidth - getEstimatedPetWidth() - gutter);
+}
+
+function YuexinmiaoPet() {
+  const [action, setAction] = useState<PetAction>("idle");
+  const [frame, setFrame] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [travelX, setTravelX] = useState(getInitialPetX);
+  const [travelDuration, setTravelDuration] = useState(0.35);
+  const petRef = useRef<HTMLButtonElement>(null);
+  const actionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const walkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const travelXRef = useRef(0);
+  const boundsRef = useRef({ min: getPetGutter(), max: getInitialPetX() });
+  const reducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    setFrame(0);
+  }, [action]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setFrame(0);
+      return;
+    }
+
+    const current = PET_ACTIONS[action];
+    const displayFrame = Math.min(frame, current.durations.length - 1);
+    const timeout = window.setTimeout(() => {
+      setFrame((value) => {
+        const next = value + 1;
+        if (next < current.durations.length) return next;
+        return current.loop ? 0 : value;
+      });
+    }, current.durations[displayFrame]);
+
+    return () => window.clearTimeout(timeout);
+  }, [action, frame, reducedMotion]);
+
+  useEffect(() => () => {
+    if (actionTimer.current) window.clearTimeout(actionTimer.current);
+    if (walkTimer.current) window.clearTimeout(walkTimer.current);
+  }, []);
+
+  useEffect(() => {
+    travelXRef.current = travelX;
+  }, [travelX]);
+
+  useEffect(() => {
+    reducedMotionRef.current = reducedMotion;
+  }, [reducedMotion]);
+
+  const updatePetBounds = useCallback(() => {
+    const gutter = getPetGutter();
+    const petWidth = petRef.current?.getBoundingClientRect().width ?? getEstimatedPetWidth();
+    const max = Math.max(gutter, window.innerWidth - petWidth - gutter);
+    boundsRef.current = { min: gutter, max };
+
+    setTravelX((value) => {
+      const next = reducedMotionRef.current ? max : clamp(value, gutter, max);
+      travelXRef.current = next;
+      return next;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    updatePetBounds();
+    window.addEventListener("resize", updatePetBounds);
+    return () => window.removeEventListener("resize", updatePetBounds);
+  }, [updatePetBounds]);
+
+  const clearWalkTimer = useCallback(() => {
+    if (walkTimer.current) {
+      window.clearTimeout(walkTimer.current);
+      walkTimer.current = null;
+    }
+  }, []);
+
+  const scheduleStroll = useCallback((delay = 1600) => {
+    clearWalkTimer();
+
+    walkTimer.current = window.setTimeout(() => {
+      if (reducedMotionRef.current) return;
+
+      const { min, max } = boundsRef.current;
+      const currentX = clamp(travelXRef.current, min, max);
+      const range = max - min;
+
+      if (range < 24) {
+        scheduleStroll(2400);
+        return;
+      }
+
+      const minStep = Math.min(96, Math.max(44, range * 0.28));
+      let nextX = currentX;
+
+      for (let i = 0; i < 6; i++) {
+        const candidate = Math.round(min + Math.random() * range);
+        if (Math.abs(candidate - currentX) >= minStep) {
+          nextX = candidate;
+          break;
+        }
+      }
+
+      if (Math.abs(nextX - currentX) < 8) {
+        scheduleStroll(1800);
+        return;
+      }
+
+      const distance = Math.abs(nextX - currentX);
+      const duration = Math.max(1300, Math.min(4200, (distance / PET_WALK_SPEED) * 1000));
+      const nextAction = nextX > currentX ? "running-right" : "running-left";
+
+      setAction(nextAction);
+      setTravelDuration(duration / 1000);
+      setTravelX(nextX);
+
+      walkTimer.current = window.setTimeout(() => {
+        if (reducedMotionRef.current) return;
+        setAction("idle");
+        scheduleStroll(1600 + Math.random() * 2600);
+      }, duration + 120);
+    }, delay);
+  }, [clearWalkTimer]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      clearWalkTimer();
+      setTravelDuration(0.35);
+      setTravelX(boundsRef.current.max);
+      setAction("idle");
+      return;
+    }
+
+    scheduleStroll();
+
+    return clearWalkTimer;
+  }, [clearWalkTimer, reducedMotion, scheduleStroll]);
+
+  const playAction = useCallback((nextAction: PetAction) => {
+    if (reducedMotion) return;
+    if (actionTimer.current) window.clearTimeout(actionTimer.current);
+    clearWalkTimer();
+    const duration = PET_ACTIONS[nextAction].durations.reduce((sum, value) => sum + value, 0);
+    setTravelDuration(0.28);
+    setAction(nextAction);
+    actionTimer.current = window.setTimeout(() => {
+      setAction("idle");
+      actionTimer.current = null;
+      scheduleStroll(1000);
+    }, duration + 80);
+  }, [clearWalkTimer, reducedMotion, scheduleStroll]);
+
+  const current = PET_ACTIONS[action];
+  const displayFrame = Math.min(frame, current.durations.length - 1);
+  const x = (displayFrame / (PET_COLUMNS - 1)) * 100;
+  const y = (current.row / (PET_ROWS - 1)) * 100;
+
+  return (
+    <motion.button
+      ref={petRef}
+      type="button"
+      aria-label="和月薪喵打招呼"
+      initial={{ opacity: 0, y: 12, scale: 0.96 }}
+      animate={{
+        opacity: 1,
+        x: reducedMotion ? 0 : travelX,
+        y: action === "jumping" && !reducedMotion ? [0, -16, 0] : 0,
+        scale: 1,
+      }}
+      whileHover={reducedMotion ? undefined : { scale: 1.02 }}
+      whileTap={reducedMotion ? undefined : { scale: 0.96 }}
+      transition={{
+        opacity: { duration: 0.35, ease: EASE },
+        x: { duration: PET_RESTING_ACTIONS.includes(action) ? 0.35 : travelDuration, ease: "easeInOut" },
+        y: { duration: action === "jumping" ? 0.55 : 0.25, ease: EASE },
+        scale: { duration: 0.2, ease: EASE },
+      }}
+      onPointerEnter={() => playAction("waving")}
+      onFocus={() => playAction("waving")}
+      onClick={() => playAction("jumping")}
+      className="themed-interactive fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-0 sm:bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 block cursor-pointer border-0 bg-transparent p-0 opacity-90 hover:opacity-100 focus-visible:opacity-100"
+      style={{
+        width: "clamp(72px, 10vw, 96px)",
+        aspectRatio: "192 / 208",
+        backgroundImage: `url(${PET_SPRITESHEET})`,
+        backgroundSize: `${PET_COLUMNS * 100}% ${PET_ROWS * 100}%`,
+        backgroundPosition: `${x}% ${y}%`,
+        backgroundRepeat: "no-repeat",
+        imageRendering: "auto",
+        touchAction: "manipulation",
+        willChange: "transform, opacity",
+      }}
+    />
+  );
+}
 
 // ======== UPTIME (isolated to prevent full-tree re-render every second) ========
 
@@ -546,6 +787,9 @@ export default function App() {
         {/* Rain Backdrop */}
         <RainBackdrop theme={theme} />
 
+        {/* Codex Pet */}
+        <YuexinmiaoPet />
+
         {/* Welcome Banner */}
         <AnimatePresence>
           {showBanner && (
@@ -696,7 +940,7 @@ export default function App() {
             {ABOUT.map(({ icon: Icon, value }, i) => (
               <span key={value} className="flex items-center gap-1.5">
                 {i > 0 && <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--t-fg-muted)' }} />}
-                <Icon className="w-3 h-3" />
+                <Icon className="w-3 h-3" strokeWidth={1.75} />
                 {value}
               </span>
             ))}
@@ -720,7 +964,7 @@ export default function App() {
                 className="group flex items-center gap-2 text-sm font-medium themed-interactive hover:scale-105"
                 style={{ color: 'var(--t-fg)' }}
               >
-                <Icon className="w-3.5 h-3.5 group-hover:text-current" style={{ color: 'var(--t-fg-muted)', transition: 'color 0.2s ease' }} />
+                <Icon className="w-3.5 h-3.5 group-hover:text-current" strokeWidth={1.75} style={{ color: 'var(--t-fg-muted)', transition: 'color 0.2s ease' }} />
                 <span className="editorial-link">{label}</span>
               </a>
             ))}
@@ -738,7 +982,7 @@ export default function App() {
                   style={{ color: copied ? 'var(--t-fg)' : 'var(--t-fg-secondary)' }}
                   aria-label={s.label}
                 >
-                  {copied ? <Check className="w-[18px] h-[18px]" /> : <Icon className="w-[18px] h-[18px]" />}
+                  {copied ? <Check className="w-[18px] h-[18px]" strokeWidth={1.75} /> : <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />}
                   <span
                     className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
                     style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
@@ -756,7 +1000,7 @@ export default function App() {
                   style={{ color: 'var(--t-fg-secondary)' }}
                   aria-label={s.label}
                 >
-                  <Icon className="w-[18px] h-[18px]" />
+                  <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
                   <span
                     className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
                     style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
@@ -798,7 +1042,7 @@ export default function App() {
                 animate={chiming ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
                 transition={{ duration: 0.6 }}
               >
-                <Wind className="w-4 h-4" style={{ color: 'var(--t-fg-secondary)' }} />
+                <Volume2 className="w-4 h-4" strokeWidth={1.75} style={{ color: 'var(--t-fg-secondary)' }} />
               </motion.div>
               <AnimatePresence>
                 {chiming &&
@@ -834,7 +1078,7 @@ export default function App() {
                 animate={{ rotate: 0, opacity: 1 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <ToggleIcon className="w-4 h-4" style={{ color: 'var(--t-fg-secondary)' }} />
+                <ToggleIcon className="w-4 h-4" strokeWidth={1.75} style={{ color: 'var(--t-fg-secondary)' }} />
               </motion.div>
               <AnimatePresence>
                 {themeToggling &&
