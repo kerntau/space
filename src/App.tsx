@@ -807,6 +807,7 @@ export default function App() {
   const [chiming, setChiming] = useState(false);
   const [showBanner, setShowBanner] = useState(() => !sessionStorage.getItem("banner-dismissed-v2"));
   const [bannerIndex, setBannerIndex] = useState(0);
+  const [bannerPaused, setBannerPaused] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState("/avatar.png");
   const [showInitials, setShowInitials] = useState(false);
@@ -850,7 +851,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!showBanner || reduceMotion || BANNERS.length < 2) return;
+    if (!showBanner || bannerPaused || reduceMotion || BANNERS.length < 2) return;
     let intervalId: number | null = null;
     const stopTimer = () => {
       if (intervalId) {
@@ -875,7 +876,7 @@ export default function App() {
       stopTimer();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [showBanner, reduceMotion]);
+  }, [bannerPaused, showBanner, reduceMotion]);
 
   const handleCopy = useCallback(() => {
     const showCopyFeedback = (success: boolean) => {
@@ -949,6 +950,12 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
               transition={{ duration: 0.45, ease: EASE }}
+              onPointerEnter={() => setBannerPaused(true)}
+              onPointerLeave={() => setBannerPaused(false)}
+              onFocusCapture={() => setBannerPaused(true)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) setBannerPaused(false);
+              }}
               className="themed fixed top-0 left-0 right-0 z-40 flex items-center justify-center"
               style={{
                 backgroundColor: 'var(--t-banner-bg)',
