@@ -1091,13 +1091,13 @@ export default function App() {
               aria-label="播放风铃音效"
             >
               <motion.div
-                animate={chiming ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
-                transition={{ duration: 0.6 }}
+                animate={chiming && !reduceMotion ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.6 }}
               >
                 <Wind className="w-4 h-4" strokeWidth={1.75} style={{ color: 'var(--t-fg-secondary)' }} />
               </motion.div>
               <AnimatePresence>
-                {chiming &&
+                {chiming && !reduceMotion &&
                   [0, 1].map((i) => (
                     <motion.span
                       key={i}
@@ -1134,7 +1134,7 @@ export default function App() {
                 <ToggleIcon className="w-4 h-4" strokeWidth={1.75} style={{ color: 'var(--t-fg-secondary)' }} />
               </motion.div>
               <AnimatePresence>
-                {themeToggling &&
+                {themeToggling && !reduceMotion &&
                   [0, 1].map((i) => (
                     <motion.span
                       key={i}
