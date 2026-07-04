@@ -54,15 +54,15 @@ interface LinkItem {
 }
 
 const NAV_LINKS: LinkItem[] = [
-  { label: "Home", url: "https://my.coox.one", icon: House },
-  { label: "Blog", url: "https://blog.coox.one", icon: NotebookText },
+  { label: "Home", url: "https://my.coox.one", icon: House, ariaLabel: "打开 Home，新窗口" },
+  { label: "Blog", url: "https://blog.coox.one", icon: NotebookText, ariaLabel: "打开 Blog，新窗口" },
 ];
 
 const SOCIALS: LinkItem[] = [
   { label: "Email", url: "mailto:cotovo@qq.com", icon: AtSign, ariaLabel: "复制邮箱地址", copyable: true },
-  { label: "GitHub", url: "https://github.com/cotovo", icon: Github, ariaLabel: "打开 GitHub 主页" },
-  { label: "抖音", url: "https://v.douyin.com/HWMgjLaTtFk", icon: DouyinIcon, ariaLabel: "打开抖音主页" },
-  { label: "Bilibili", url: "https://space.bilibili.com/9655855", icon: BilibiliIcon, ariaLabel: "打开 Bilibili 主页" },
+  { label: "GitHub", url: "https://github.com/cotovo", icon: Github, ariaLabel: "打开 GitHub 主页，新窗口" },
+  { label: "抖音", url: "https://v.douyin.com/HWMgjLaTtFk", icon: DouyinIcon, ariaLabel: "打开抖音主页，新窗口" },
+  { label: "Bilibili", url: "https://space.bilibili.com/9655855", icon: BilibiliIcon, ariaLabel: "打开 Bilibili 主页，新窗口" },
 ];
 
 const ABOUT = [
@@ -870,6 +870,7 @@ export default function App() {
                         href={BANNERS[bannerIndex].link.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label={`打开 ${BANNERS[bannerIndex].link.label}，新窗口`}
                         className="themed editorial-link font-medium"
                         style={{ color: 'var(--t-fg)' }}
                       >
@@ -1008,12 +1009,13 @@ export default function App() {
 
           {/* Navigate */}
           <motion.div variants={fadeUp} className="flex items-center gap-6 sm:gap-8 mb-6 sm:mb-8">
-            {NAV_LINKS.map(({ label, url, icon: Icon }) => (
+            {NAV_LINKS.map(({ label, url, icon: Icon, ariaLabel }) => (
               <a
                 key={label}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={ariaLabel ?? label}
                 className="group -mx-2 -my-3 flex min-h-11 items-center gap-2 rounded-full px-2 py-3 text-sm font-medium themed-interactive hover:scale-105"
                 style={{ color: 'var(--t-fg)' }}
               >
@@ -1171,7 +1173,7 @@ export default function App() {
               © {YEAR} kerntau
             </p>
             <p className="text-[10px] tracking-wide" style={{ color: 'var(--t-fg-muted)' }}>
-              本站由 <a href="https://cloudflare.com" target="_blank" rel="noopener noreferrer" className="editorial-link">Cloudflare</a> 强力驱动 · 运行 <Uptime />
+              本站由 <a href="https://cloudflare.com" target="_blank" rel="noopener noreferrer" aria-label="打开 Cloudflare，新窗口" className="editorial-link">Cloudflare</a> 强力驱动 · 运行 <Uptime />
             </p>
           </motion.div>
         </motion.div>
