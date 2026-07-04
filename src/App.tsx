@@ -807,6 +807,7 @@ export default function App() {
 
   const email = "cotovo@qq.com";
   const ToggleIcon = theme === "light" ? Moon : Sun;
+  const nextThemeLabel = theme === "light" ? "深色" : "浅色";
 
   useLayoutEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -1220,7 +1221,7 @@ export default function App() {
               onClick={toggleTheme}
               className="group relative flex h-11 w-11 items-center justify-center rounded-full themed-interactive cursor-pointer"
               style={{ backgroundColor: 'var(--t-hover)' }}
-              aria-label="切换明暗主题"
+              aria-label={`切换到${nextThemeLabel}主题`}
             >
               <motion.div
                 key={theme}
