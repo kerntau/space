@@ -844,7 +844,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!showBanner || reduceMotion) return;
+    if (!showBanner || reduceMotion || BANNERS.length < 2) return;
     let intervalId: number | null = null;
     const stopTimer = () => {
       if (intervalId) {
