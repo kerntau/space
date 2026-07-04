@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from "react";
-import { motion, AnimatePresence, MotionConfig } from "motion/react";
+import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
 import {
   House, NotebookText, Github, AtSign, Check, Wind, Sun, Moon,
   MapPinned, CalendarDays, Braces, X, type LucideIcon,
@@ -739,6 +739,8 @@ export default function App() {
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chimeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const themeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const reduceMotion = prefersReducedMotion === true;
 
   const email = "cotovo@qq.com";
   const ToggleIcon = theme === "light" ? Moon : Sun;
@@ -772,10 +774,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!showBanner) return;
+    if (!showBanner || reduceMotion) return;
     const id = setInterval(() => setBannerIndex((i) => (i + 1) % BANNERS.length), 2600);
     return () => clearInterval(id);
-  }, [showBanner]);
+  }, [showBanner, reduceMotion]);
 
   const handleCopy = useCallback(() => {
     const onCopy = () => {
@@ -955,8 +957,8 @@ export default function App() {
               )}
             </div>
             <motion.span
-              animate={{ opacity: [0.35, 1, 0.35] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              animate={reduceMotion ? { opacity: 0.7 } : { opacity: [0.35, 1, 0.35] }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
               className="themed absolute bottom-1 right-1 w-2 h-2 rounded-full border-2 z-10"
               style={{ backgroundColor: 'var(--t-fg)', borderColor: 'var(--t-bg)' }}
             />
