@@ -964,10 +964,10 @@ export default function App() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-sm font-medium themed-interactive hover:scale-105"
+                className="group -mx-2 -my-3 flex min-h-11 items-center gap-2 rounded-full px-2 py-3 text-sm font-medium themed-interactive hover:scale-105"
                 style={{ color: 'var(--t-fg)' }}
               >
-                <Icon className="w-3.5 h-3.5 group-hover:text-current" strokeWidth={1.75} style={{ color: 'var(--t-fg-muted)', transition: 'color 0.2s ease' }} />
+                <Icon className="w-3.5 h-3.5 group-hover:text-current group-focus-visible:text-current" strokeWidth={1.75} style={{ color: 'var(--t-fg-muted)', transition: 'color 0.2s ease' }} />
                 <span className="editorial-link">{label}</span>
               </a>
             ))}
@@ -980,6 +980,7 @@ export default function App() {
               return s.copyable ? (
                 <button
                   key={s.label}
+                  type="button"
                   onClick={handleCopy}
                   className="group relative flex h-11 w-11 items-center justify-center rounded-full themed-interactive hover:scale-105 cursor-pointer"
                   style={{ color: copied ? 'var(--t-fg)' : 'var(--t-fg-secondary)' }}
@@ -987,7 +988,7 @@ export default function App() {
                 >
                   {copied ? <Check className="w-[18px] h-[18px]" strokeWidth={1.75} /> : <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />}
                   <span
-                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
                     style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
                   >
                     {s.label}
@@ -1005,7 +1006,7 @@ export default function App() {
                 >
                   <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
                   <span
-                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
                     style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
                   >
                     {s.label}
@@ -1036,6 +1037,7 @@ export default function App() {
           {/* Controls */}
           <motion.div variants={fadeUp} className="flex items-center gap-3 sm:gap-4 mb-5">
             <button
+              type="button"
               onClick={handleChime}
               className="group relative flex h-11 w-11 items-center justify-center rounded-full themed-interactive cursor-pointer"
               style={{ backgroundColor: 'var(--t-hover)' }}
@@ -1062,7 +1064,7 @@ export default function App() {
                   ))}
               </AnimatePresence>
               <span
-                className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
                 style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
               >
                 轻抚风铃
@@ -1070,6 +1072,7 @@ export default function App() {
             </button>
 
             <button
+              type="button"
               onClick={toggleTheme}
               className="group relative flex h-11 w-11 items-center justify-center rounded-full themed-interactive cursor-pointer"
               style={{ backgroundColor: 'var(--t-hover)' }}
@@ -1098,7 +1101,7 @@ export default function App() {
                   ))}
               </AnimatePresence>
               <span
-                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
+                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
                 style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)' }}
               >
                 切换主题
