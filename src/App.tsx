@@ -384,6 +384,10 @@ function YuexinmiaoPet() {
 
   useEffect(() => {
     if (reducedMotion || !pageVisible) {
+      if (actionTimer.current) {
+        window.clearTimeout(actionTimer.current);
+        actionTimer.current = null;
+      }
       clearWalkTimer();
       setTravelDuration(0.35);
       setTravelX(boundsRef.current.max);
