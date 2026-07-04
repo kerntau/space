@@ -215,6 +215,7 @@ function YuexinmiaoPet() {
   const [action, setAction] = useState<PetAction>("idle");
   const [frame, setFrame] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden);
   const [travelX, setTravelX] = useState(getInitialPetX);
   const [travelDuration, setTravelDuration] = useState(0.35);
   const petRef = useRef<HTMLButtonElement>(null);
@@ -223,6 +224,7 @@ function YuexinmiaoPet() {
   const travelXRef = useRef(0);
   const boundsRef = useRef({ min: getPetGutter(), max: getInitialPetX() });
   const reducedMotionRef = useRef(false);
+  const pageVisibleRef = useRef(!document.hidden);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -237,7 +239,7 @@ function YuexinmiaoPet() {
   }, [action]);
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || !pageVisible) {
       setFrame(0);
       return;
     }
@@ -253,7 +255,7 @@ function YuexinmiaoPet() {
     }, current.durations[displayFrame]);
 
     return () => window.clearTimeout(timeout);
-  }, [action, frame, reducedMotion]);
+  }, [action, frame, pageVisible, reducedMotion]);
 
   useEffect(() => () => {
     if (actionTimer.current) window.clearTimeout(actionTimer.current);
@@ -294,11 +296,34 @@ function YuexinmiaoPet() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleVisibility = () => {
+      const visible = !document.hidden;
+      pageVisibleRef.current = visible;
+      setPageVisible(visible);
+
+      if (!visible) {
+        if (actionTimer.current) {
+          window.clearTimeout(actionTimer.current);
+          actionTimer.current = null;
+        }
+        clearWalkTimer();
+        setAction("idle");
+        setFrame(0);
+        setTravelDuration(0.35);
+      }
+    };
+
+    handleVisibility();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [clearWalkTimer]);
+
   const scheduleStroll = useCallback((delay = 1600) => {
     clearWalkTimer();
 
     walkTimer.current = window.setTimeout(() => {
-      if (reducedMotionRef.current) return;
+      if (reducedMotionRef.current || !pageVisibleRef.current) return;
 
       const { min, max } = boundsRef.current;
       const currentX = clamp(travelXRef.current, min, max);
@@ -334,7 +359,7 @@ function YuexinmiaoPet() {
       setTravelX(nextX);
 
       walkTimer.current = window.setTimeout(() => {
-        if (reducedMotionRef.current) return;
+        if (reducedMotionRef.current || !pageVisibleRef.current) return;
         setAction("idle");
         scheduleStroll(1600 + Math.random() * 2600);
       }, duration + 120);
@@ -342,7 +367,7 @@ function YuexinmiaoPet() {
   }, [clearWalkTimer]);
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || !pageVisible) {
       clearWalkTimer();
       setTravelDuration(0.35);
       setTravelX(boundsRef.current.max);
@@ -353,10 +378,10 @@ function YuexinmiaoPet() {
     scheduleStroll();
 
     return clearWalkTimer;
-  }, [clearWalkTimer, reducedMotion, scheduleStroll]);
+  }, [clearWalkTimer, pageVisible, reducedMotion, scheduleStroll]);
 
   const playAction = useCallback((nextAction: PetAction) => {
-    if (reducedMotion) return;
+    if (reducedMotion || !pageVisible) return;
     if (actionTimer.current) window.clearTimeout(actionTimer.current);
     clearWalkTimer();
     const duration = PET_ACTIONS[nextAction].durations.reduce((sum, value) => sum + value, 0);
@@ -367,7 +392,7 @@ function YuexinmiaoPet() {
       actionTimer.current = null;
       scheduleStroll(1000);
     }, duration + 80);
-  }, [clearWalkTimer, reducedMotion, scheduleStroll]);
+  }, [clearWalkTimer, pageVisible, reducedMotion, scheduleStroll]);
 
   const current = PET_ACTIONS[action];
   const displayFrame = Math.min(frame, current.durations.length - 1);
