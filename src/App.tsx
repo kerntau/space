@@ -833,12 +833,13 @@ export default function App() {
                   </AnimatePresence>
                 </div>
                 <button
+                  type="button"
                   onClick={dismissBanner}
-                  className="themed-interactive absolute right-4 sm:right-6 flex-shrink-0 hover:opacity-50 cursor-pointer"
+                  className="themed-interactive absolute right-1 sm:right-2 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full hover:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
                   style={{ color: 'var(--t-fg-muted)' }}
                   aria-label="关闭横幅"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" strokeWidth={1.75} />
                 </button>
               </div>
             </motion.div>
