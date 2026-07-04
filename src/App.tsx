@@ -737,6 +737,8 @@ export default function App() {
   const [showInitials, setShowInitials] = useState(false);
   const [themeToggling, setThemeToggling] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chimeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const themeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const email = "cotovo@qq.com";
   const ToggleIcon = theme === "light" ? Moon : Sun;
@@ -765,6 +767,8 @@ export default function App() {
 
   useEffect(() => () => {
     if (copyTimer.current) clearTimeout(copyTimer.current);
+    if (chimeTimer.current) clearTimeout(chimeTimer.current);
+    if (themeTimer.current) clearTimeout(themeTimer.current);
   }, []);
 
   useEffect(() => {
@@ -790,7 +794,11 @@ export default function App() {
 
   const handleChime = useCallback(() => {
     setChiming(true);
-    setTimeout(() => setChiming(false), 800);
+    if (chimeTimer.current) clearTimeout(chimeTimer.current);
+    chimeTimer.current = setTimeout(() => {
+      setChiming(false);
+      chimeTimer.current = null;
+    }, 800);
     playWindChime();
   }, []);
 
@@ -806,7 +814,11 @@ export default function App() {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", THEMES[next].bg);
     setThemeToggling(true);
-    setTimeout(() => setThemeToggling(false), 700);
+    if (themeTimer.current) clearTimeout(themeTimer.current);
+    themeTimer.current = setTimeout(() => {
+      setThemeToggling(false);
+      themeTimer.current = null;
+    }, 700);
     localStorage.setItem("theme", next);
     setTheme(next);
   }, [theme]);
@@ -889,6 +901,7 @@ export default function App() {
               className="themed fixed left-1/2 z-50 text-xs font-medium px-4 py-2 rounded-full whitespace-nowrap"
               style={{ backgroundColor: 'var(--t-fg)', color: 'var(--t-bg)', top: showBanner ? "3.5rem" : "1.5rem" }}
               role="status"
+              aria-live="polite"
             >
               邮箱已复制
             </motion.div>
