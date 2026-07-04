@@ -1156,10 +1156,15 @@ export default function App() {
                   type="button"
                   onClick={handleCopy}
                   className="group relative flex h-11 w-11 items-center justify-center rounded-full themed-interactive hover:scale-105 cursor-pointer"
-                  style={{ color: copied ? 'var(--t-fg)' : 'var(--t-fg-secondary)' }}
                   aria-label={copied ? "邮箱地址已复制" : copyFailed ? "邮箱复制失败，再试一次" : s.ariaLabel ?? s.label}
                 >
-                  {copied ? <Check className="w-[18px] h-[18px]" strokeWidth={1.75} /> : <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />}
+                  <span className="flex h-[18px] w-[18px] items-center justify-center">
+                    {copied ? (
+                      <Check className="h-[18px] w-[18px]" strokeWidth={1.75} style={{ color: 'var(--t-fg)' }} />
+                    ) : (
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} style={{ color: 'var(--t-fg-secondary)' }} />
+                    )}
+                  </span>
                   <span
                     aria-hidden="true"
                     className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-[10px] leading-none tracking-wider px-1.5 py-0.5 rounded-full opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 themed-interactive whitespace-nowrap pointer-events-none"
@@ -1255,14 +1260,9 @@ export default function App() {
               style={{ backgroundColor: 'var(--t-hover)' }}
               aria-label={`切换到${nextThemeLabel}主题`}
             >
-              <motion.div
-                key={theme}
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
+              <span className="flex h-4 w-4 items-center justify-center">
                 <ToggleIcon className="w-4 h-4" strokeWidth={1.75} style={{ color: 'var(--t-fg-secondary)' }} />
-              </motion.div>
+              </span>
               <AnimatePresence>
                 {themeToggling && !reduceMotion &&
                   [0, 1].map((i) => (
