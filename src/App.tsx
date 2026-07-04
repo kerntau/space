@@ -454,14 +454,20 @@ function RainBackdrop({ theme }: { theme: ThemeMode }) {
     // Reduced motion: skip rain entirely
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const dpr = window.devicePixelRatio || 1;
+    const getDpr = () => window.devicePixelRatio || 1;
     let width = window.innerWidth;
     let height = window.innerHeight;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
-    ctx.scale(dpr, dpr);
+
+    const syncCanvasSize = () => {
+      const dpr = getDpr();
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    syncCanvasSize();
 
     // --- Multi-layer parallax rain ---
     interface Drop {
@@ -659,11 +665,7 @@ function RainBackdrop({ theme }: { theme: ThemeMode }) {
     const handleResize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = width + "px";
-      canvas.style.height = height + "px";
-      ctx.scale(dpr, dpr);
+      syncCanvasSize();
     };
     const handleVisibility = () => {
       if (document.hidden) {
