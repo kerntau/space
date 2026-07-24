@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   useCallback,
   useEffect,
@@ -13,7 +13,7 @@ import {
 const SPRITESHEET = "/pets/yuexinmiao/spritesheet.webp";
 const COLUMNS = 8;
 const ROWS = 9;
-const WAITING_DELAY = 16000;
+const WAITING_DELAY = 14000;
 
 type PetAction =
   | "idle"
@@ -58,6 +58,69 @@ export interface PetReaction {
   type: "chime" | "copied" | "error" | "theme";
 }
 
+// Random dialogue banks for lively interaction
+const DIALOGUES = {
+  musicOn: ["🎵 音乐开启喵~", "🎶 随音律摇摆吧~", "✨ 奏响浪漫旋律！"],
+  musicOff: ["音乐已暂停 💤", "喵~ 稍微休息一下", "进入沉静模式喵"],
+  drop: ["落地成功喵！", "站稳啦~ 喵！", "芜湖！降落完成！"],
+  hover: ["点击我可以控制音乐哦喵~", "今天也是元气满满的一天！", "需要月薪喵做些什么吗？"],
+};
+
+function getRandomItem(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function FloatingMusicNotes({ active }: { active: boolean }) {
+  const reduceMotion = useReducedMotion() === true;
+  if (!active || reduceMotion) return null;
+
+  return (
+    <div className="absolute -top-12 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5 z-30">
+      <motion.span
+        initial={{ opacity: 0, y: 0, scale: 0.6, rotate: -15 }}
+        animate={{
+          opacity: [0, 1, 0.85, 0],
+          y: [-2, -24, -42],
+          x: [-8, -16, -10],
+          rotate: [-15, 12, -22],
+          scale: [0.6, 1.15, 0.9],
+        }}
+        transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 0.3, ease: "easeOut" }}
+        className="text-[#38BDF8] text-xs md:text-sm filter drop-shadow-[0_0_8px_rgba(56,189,248,0.85)] select-none"
+      >
+        🎵
+      </motion.span>
+      <motion.span
+        initial={{ opacity: 0, y: 0, scale: 0.6, rotate: 10 }}
+        animate={{
+          opacity: [0, 1, 0.85, 0],
+          y: [-2, -28, -48],
+          x: [6, 14, 8],
+          rotate: [10, -18, 18],
+          scale: [0.6, 1.25, 0.85],
+        }}
+        transition={{ duration: 2.5, delay: 0.7, repeat: Infinity, repeatDelay: 0.2, ease: "easeOut" }}
+        className="text-[#7DD3FC] text-sm md:text-base filter drop-shadow-[0_0_8px_rgba(125,211,252,0.85)] select-none"
+      >
+        🎶
+      </motion.span>
+      <motion.span
+        initial={{ opacity: 0, y: 0, scale: 0.5 }}
+        animate={{
+          opacity: [0, 0.95, 0],
+          y: [-4, -20, -36],
+          x: [0, -6, 6],
+          scale: [0.5, 1.1, 0.6],
+        }}
+        transition={{ duration: 1.8, delay: 1.3, repeat: Infinity, repeatDelay: 0.4, ease: "easeOut" }}
+        className="text-white text-[10px] md:text-xs filter drop-shadow-[0_0_6px_rgba(255,255,255,0.9)] select-none"
+      >
+        ✨
+      </motion.span>
+    </div>
+  );
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -68,11 +131,13 @@ function actionDuration(action: PetAction) {
 
 function petWidth() {
   if (window.innerWidth <= 480) return 56;
+  if (window.innerWidth <= 640) return 64;
   return Math.min(94, Math.max(68, window.innerWidth * 0.078));
 }
 
 function petBounds() {
-  const gutter = window.innerWidth < 640 ? 8 : 20;
+  // Mobile responsive padding to prevent edge clipping
+  const gutter = window.innerWidth < 640 ? 12 : 24;
   return {
     min: gutter,
     max: Math.max(gutter, window.innerWidth - petWidth() - gutter),
@@ -101,9 +166,13 @@ function clearTimer(timer: MutableRefObject<number | null>) {
 export default function PetCompanion({
   activeSection,
   reaction,
+  isPlayingBGM = false,
+  onToggleBGM,
 }: {
   activeSection: string;
   reaction: PetReaction | null;
+  isPlayingBGM?: boolean;
+  onToggleBGM?: () => void;
 }) {
   const reduceMotion = useReducedMotion() === true;
   const initialTravelX = restPosition("intro");
@@ -390,7 +459,8 @@ export default function PetCompanion({
         suppressClick.current = false;
         suppressClickTimer.current = null;
       }, 0);
-      setCurrentAction("idle");
+      setCurrentAction("jumping");
+      showBubble(getRandomItem(DIALOGUES.drop));
       scheduleWaiting();
     }
   }, [scheduleWaiting, setCurrentAction]);
@@ -436,6 +506,15 @@ export default function PetCompanion({
     moveTo(travelRef.current + direction * (compact ? 64 : 88));
   };
 
+  const [bubbleText, setBubbleText] = useState<string | null>(null);
+  const bubbleTimer = useRef<number | null>(null);
+
+  const showBubble = (text: string) => {
+    setBubbleText(text);
+    if (bubbleTimer.current !== null) window.clearTimeout(bubbleTimer.current);
+    bubbleTimer.current = window.setTimeout(() => setBubbleText(null), 2500);
+  };
+
   const definition = ACTIONS[action];
   const visibleFrame = Math.min(frame, definition.durations.length - 1);
   const spriteX = (visibleFrame / (COLUMNS - 1)) * 100;
@@ -449,8 +528,8 @@ export default function PetCompanion({
       <motion.button
         ref={petRef}
         type="button"
-        className={`pet-companion${dragging ? " is-dragging" : ""}${pageMoving && compact ? " is-page-moving" : ""}`}
-        aria-label="月薪喵，点击互动，可左右拖动"
+        className={`pet-companion relative${dragging ? " is-dragging" : ""}${pageMoving && compact ? " is-page-moving" : ""}`}
+        aria-label="月薪喵，点击控制音乐与互动，可左右拖动"
         aria-roledescription="可互动宠物"
         data-pet-action={action}
         data-pet-frame={visibleFrame}
@@ -458,14 +537,14 @@ export default function PetCompanion({
         animate={{
           opacity: visible ? (pageMoving && compact ? 0.22 : active || dragging ? 1 : restingOpacity) : 0,
           x: visible ? travelX : window.innerWidth + 40,
-          y: action === "jumping" && !reduceMotion ? [0, -16, -25, -9, 0] : running && !reduceMotion ? [0, -1.5, 0] : 0,
+          y: action === "jumping" && !reduceMotion ? [0, -18, -28, -10, 0] : isPlayingBGM && !reduceMotion ? [0, -6, -2, -6, 0] : running && !reduceMotion ? [0, -1.5, 0] : [0, -3, 0],
           rotate: running && !reduceMotion ? (action === "running-right" ? [0, 1.2, -0.8, 0] : [0, -1.2, 0.8, 0]) : 0,
-          scale: dragging ? 1.035 : pressed ? 0.94 : hovered || focused ? 1.04 : 1,
+          scale: dragging ? 1.04 : pressed ? 0.94 : hovered || focused ? 1.06 : 1,
         }}
         transition={{
           opacity: { duration: reduceMotion ? 0 : 0.2 },
           x: dragging || reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 116, damping: 21, mass: 0.72 },
-          y: { duration: action === "jumping" ? 0.78 : 0.34, repeat: running ? Infinity : 0, ease: "easeInOut" },
+          y: { duration: action === "jumping" ? 0.78 : isPlayingBGM ? 0.8 : 2.4, repeat: Infinity, ease: "easeInOut" },
           rotate: { duration: 0.38, repeat: running ? Infinity : 0, ease: "easeInOut" },
           scale: { duration: reduceMotion ? 0 : 0.16 },
         }}
@@ -477,6 +556,7 @@ export default function PetCompanion({
           setHovered(true);
           if (event.pointerType !== "touch" && (actionRef.current === "idle" || actionRef.current === "waiting")) {
             playAction("waving", 280);
+            if (!bubbleText) showBubble(getRandomItem(DIALOGUES.hover));
           }
         }}
         onPointerLeave={() => setHovered(false)}
@@ -495,13 +575,39 @@ export default function PetCompanion({
           }
           stopMovement();
           playAction("jumping", 360);
+
+          if (onToggleBGM) {
+            onToggleBGM();
+            showBubble(!isPlayingBGM ? getRandomItem(DIALOGUES.musicOn) : getRandomItem(DIALOGUES.musicOff));
+          } else {
+            showBubble("喵！很高兴见到你~");
+          }
         }}
         style={{
           backgroundImage: `url(${SPRITESHEET})`,
           backgroundSize: `${COLUMNS * 100}% ${ROWS * 100}%`,
           backgroundPosition: `${spriteX}% ${spriteY}%`,
         }}
-      />
+      >
+        <FloatingMusicNotes active={isPlayingBGM} />
+
+        {/* Speech Bubble Emote */}
+        <AnimatePresence>
+          {bubbleText && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              className="absolute -top-14 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-2xl bg-white text-slate-900 font-mono text-xs font-bold shadow-[0_10px_30px_rgba(0,0,0,0.4)] border border-slate-100 whitespace-nowrap pointer-events-none z-50 flex items-center gap-1.5 select-none"
+            >
+              <span>{bubbleText}</span>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white rotate-45 border-r border-b border-slate-100" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
+
       <span className="pet-status" role="status" aria-live="polite">
         月薪喵：{definition.label}
       </span>

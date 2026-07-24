@@ -148,12 +148,25 @@ export default function App() {
     if (saved === "light" || saved === "dark") return saved;
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
-  const [toast, setToast] = useState<"copied" | "error" | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [reaction, setReaction] = useState<PetReaction | null>(null);
   const [activeQR, setActiveQR] = useState<{ title: string; src: string; color: string; desc: string; icon: ReactNode } | null>(null);
+  const [isPlayingBGM, setIsPlayingBGM] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const toastTimer = useRef<number | null>(null);
   const activeSection = useActiveSection();
   const reduceMotion = useReducedMotion() === true;
+
+  const toggleBGM = useCallback(() => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.play().catch((err) => {
+        console.warn("BGM play failed:", err);
+      });
+    } else {
+      audioRef.current.pause();
+    }
+  }, []);
 
   useLayoutEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -208,6 +221,15 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <main className="site-root" aria-label="kerntau 个人主页">
+        <audio
+          ref={audioRef}
+          src="/bgm.mp3"
+          loop
+          preload="auto"
+          onPlay={() => setIsPlayingBGM(true)}
+          onPause={() => setIsPlayingBGM(false)}
+        />
+
         <video className="background-video" src="/background.mp4" autoPlay loop muted playsInline />
         {/* Global Lighter Blur Mask */}
         <div className="fixed inset-0 z-0 bg-black/10 backdrop-blur-md pointer-events-none" />
@@ -381,7 +403,12 @@ export default function App() {
           )}
         </AnimatePresence>
         
-        <PetCompanion activeSection={activeSection} reaction={reaction} />
+        <PetCompanion 
+          activeSection={activeSection} 
+          reaction={reaction} 
+          isPlayingBGM={isPlayingBGM}
+          onToggleBGM={toggleBGM}
+        />
       </main>
     </MotionConfig>
   );
